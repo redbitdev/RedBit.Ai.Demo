@@ -22,7 +22,7 @@ namespace RedBit.XamServerless
 
         public MainPageViewModel()
         {
-            this.Title = "Xamarin AI";
+            Title = "Xamarin AI";
         }
 
         private string _Status = string.Empty;
@@ -104,7 +104,7 @@ namespace RedBit.XamServerless
                             // upload the image
                             Status = "Uploading Image!";
                             await UploadImage(file.GetStream());
-                            Status = "Image Uploaded!";
+                            Status = $"Image Uploaded! (ID: {_result?.Id})";
                         }
                     }
                     else

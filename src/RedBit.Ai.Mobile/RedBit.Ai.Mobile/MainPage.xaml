@@ -23,7 +23,7 @@
                HorizontalOptions="FillAndExpand"
                HorizontalTextAlignment="Center"
                VerticalTextAlignment="Center"
-               FontSize="Large"/>
+               FontSize="Medium"/>
         
         <!--The image to show-->
         <Image Grid.Row="1" >

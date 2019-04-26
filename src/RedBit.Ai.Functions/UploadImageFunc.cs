@@ -8,16 +8,29 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RedBit.Ai.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using RedBit.Ai.Core;
 
 namespace RedBit.Ai.Functions
 {
     public static class UploadImageFunc
     {
+        private static IConfiguration _config;
         [FunctionName("UploadImage")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
-            ILogger log)
+            ILogger log,
+            ExecutionContext context)
         {
+            // get the config
+            _config = new ConfigurationBuilder()
+                .SetBasePath(context.FunctionAppDirectory)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
+            
+
             // Get request body
             var body = await new StreamReader(req.Body).ReadToEndAsync();
 
@@ -52,8 +65,19 @@ namespace RedBit.Ai.Functions
             else
             {
                 log.LogInformation($"Received image of size {buffer.Length} bytes");
-                return new OkObjectResult(new ImageUploadResult { Id = Guid.NewGuid().ToString("N"), Url = "HTTPS://TODO" });
+                // add the image to blob storage and get the url
+                string url = await BlobManager.AddOriginalImage(buffer);
+                // add the image to table and get the id
+                string id = await TableManager.AddOriginalImage(url);
+                // return the details to the user
+                return new OkObjectResult(new ImageUploadResult { Id = id, Url = url });
             }
         }
+
+        private static string AzureConnectionString => _config?["AzureWebJobsStorage"];
+        private static BlobManager _blobManager;
+        private static BlobManager BlobManager => _blobManager ?? (_blobManager = new BlobManager(AzureConnectionString));
+        private static TableManager _tableManager;
+        private static TableManager TableManager => _tableManager ?? (_tableManager = new TableManager(AzureConnectionString));
     }
 }
