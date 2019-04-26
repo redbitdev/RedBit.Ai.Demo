@@ -2,13 +2,35 @@
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:RedBit.Ai.Mobile"
-             x:Class="RedBit.Ai.Mobile.MainPage">
+             xmlns:vm="clr-namespace:RedBit.XamServerless"
+             x:Class="RedBit.Ai.Mobile.MainPage"
+             Title="{Binding Title}">
+    <ContentPage.BindingContext>
+        <vm:MainPageViewModel />
+    </ContentPage.BindingContext>
 
-    <StackLayout>
-        <!-- Place new controls here -->
-        <Label Text="Welcome to Xamarin.Forms!" 
-           HorizontalOptions="Center"
-           VerticalOptions="CenterAndExpand" />
-    </StackLayout>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Command="{Binding SnapPictureCommand}" IsEnabled="{Binding PictureButtonEnabled}" Text="New Upload" />
+    </ContentPage.ToolbarItems>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--Just a label to show the status-->
+        <Label Text="{Binding Status}" 
+               HorizontalOptions="FillAndExpand"
+               HorizontalTextAlignment="Center"
+               VerticalTextAlignment="Center"
+               FontSize="Large"/>
+        
+        <!--The image to show-->
+        <Image Grid.Row="1" >
+            <Image.Source>
+                <FileImageSource File="{Binding PhotoPath}" />
+            </Image.Source>
+        </Image>
+    </Grid>
 
 </ContentPage>
