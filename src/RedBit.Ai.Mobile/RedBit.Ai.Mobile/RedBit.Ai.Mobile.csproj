@@ -16,4 +16,8 @@
     <PackageReference Include="Xamarin.Forms" Version="3.6.0.344457" />
     <PackageReference Include="Xamarin.Essentials" Version="1.1.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\RedBit.Ai.Models\RedBit.Ai.Models.csproj" />
+  </ItemGroup>
 </Project>

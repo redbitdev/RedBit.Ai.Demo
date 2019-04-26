@@ -10,7 +10,7 @@
     </ContentPage.BindingContext>
 
     <ContentPage.ToolbarItems>
-        <ToolbarItem Command="{Binding SnapPictureCommand}" IsEnabled="{Binding PictureButtonEnabled}" Text="New Upload" />
+        <ToolbarItem Command="{Binding SnapPictureCommand}" Text="New Upload" />
     </ContentPage.ToolbarItems>
     <Grid>
         <Grid.RowDefinitions>
@@ -31,6 +31,14 @@
                 <FileImageSource File="{Binding PhotoPath}" />
             </Image.Source>
         </Image>
+        
+        <!--Just a loading cursor-->
+        <ActivityIndicator
+            Grid.RowSpan="2"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            VerticalOptions="CenterAndExpand"
+            HorizontalOptions="CenterAndExpand" />
     </Grid>
 
 </ContentPage>

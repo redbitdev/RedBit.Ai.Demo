@@ -2,9 +2,11 @@
 using Plugin.Media;
 using Plugin.Permissions;
 using Plugin.Permissions.Abstractions;
+using RedBit.Ai.Models;
 using RedBit.Mobile.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -15,6 +17,9 @@ namespace RedBit.XamServerless
 {
     public class MainPageViewModel : ViewModel
     {
+        private ImageUploadResult _result;
+        private const string BASE_URL = "https://cba2fa38.ngrok.io/api";
+
         public MainPageViewModel()
         {
             this.Title = "Xamarin AI";
@@ -30,18 +35,6 @@ namespace RedBit.XamServerless
         {
             get => _Status;
             set => SetProperty(ref _Status, value);
-        }
-
-        private bool _PictureButtonEnabled = true;
-
-        /// <summary>
-        /// Sets and gets the PictureButtonEnabled property.
-        /// Changes to that property's value raise the PropertyChanged event. 
-        /// </summary>
-        public bool PictureButtonEnabled
-        {
-            get => _PictureButtonEnabled;
-            set => SetProperty(ref _PictureButtonEnabled, value);
         }
 
         private string _PhotoPath = string.Empty;
@@ -71,7 +64,9 @@ namespace RedBit.XamServerless
 
         private async void TakePicture()
         {
-            PictureButtonEnabled = false;
+            if (IsBusy) return;
+
+            IsBusy = true;
             try
             {
                 await CrossMedia.Current.Initialize();
@@ -79,7 +74,6 @@ namespace RedBit.XamServerless
                 // attempt to take picture
                 if (await InitializeCameraPermissions() && await InitializeStoragePermissions())
                 {
-
                     // check if camera is available
                     if (!CrossMedia.Current.IsCameraAvailable || !CrossMedia.Current.IsTakePhotoSupported)
                     {
@@ -99,27 +93,67 @@ namespace RedBit.XamServerless
 
                     if (file != null)
                     {
-                        Status = "Composing Picture ...";
-                        var t = file.GetStream();
-                        byte[] buffer = new byte[t.Length];
-                        t.Read(buffer, 0, buffer.Length);
-                        var b64 = Convert.ToBase64String(buffer);
+                        using (file)
+                        {
+                            // convert image to base 64
+                            Status = "Composing Picture ...";
+                            
+                            // save the path for the photo to show in the UI
+                            PhotoPath = file.Path;
 
-                        this.PhotoPath = file.Path;
-                        file.Dispose();
-                        Status = "See your pic!";
+                            // upload the image
+                            Status = "Uploading Image!";
+                            await UploadImage(file.GetStream());
+                            Status = "Image Uploaded!";
+                        }
                     }
                     else
                     {
                         await DisplayAlert("Information", "No picture available");
                         Status = "No picture available";
                     }
-
                 }
             }
             finally
             {
-                PictureButtonEnabled = true;
+                IsBusy = false;
+            }
+        }
+
+        private async Task UploadImage(Stream file)
+        {
+            // create the base64 stream
+            byte[] buffer = new byte[file.Length];
+            file.Read(buffer, 0, buffer.Length);
+            var b64 = Convert.ToBase64String(buffer);
+
+            // upload using HttpClient
+            using (HttpClient client = new HttpClient())
+            {
+                // get the URL
+                var url = $"{BASE_URL}/UploadImage";
+
+                // create the object to upload
+                var imageObject = new ImageUpload { Imageb64 = b64 };
+
+                // create the request
+                using (var msg = new HttpRequestMessage(HttpMethod.Post, url))
+                {
+                    msg.Headers.Add("Accept", "application/json");
+
+                    // set the body for the POST
+                    msg.Content = new StringContent(JsonConvert.SerializeObject(imageObject), Encoding.UTF8, "application/json");
+                    msg.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                    // send the response
+                    using (var response = await client.SendAsync(msg, HttpCompletionOption.ResponseContentRead))
+                    {
+                        var responseContent = await response.Content.ReadAsStringAsync();
+
+                        // parse out the response
+                        _result = JsonConvert.DeserializeObject<ImageUploadResult>(responseContent);
+                    }
+                }
             }
         }
 

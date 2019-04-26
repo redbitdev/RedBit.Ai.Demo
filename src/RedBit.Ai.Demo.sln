@@ -9,9 +9,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedBit.Ai.Mobile.iOS", "Red
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedBit.Ai.Mobile", "RedBit.Ai.Mobile\RedBit.Ai.Mobile\RedBit.Ai.Mobile.csproj", "{2C76622A-1A9C-464F-A7E0-2BAB03B11BCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedBit.Ai.Core", "RedBit.Ai.Core\RedBit.Ai.Core.csproj", "{3EF1E72E-5780-4FA5-959A-81DA24A77037}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedBit.Ai.Core", "RedBit.Ai.Core\RedBit.Ai.Core.csproj", "{3EF1E72E-5780-4FA5-959A-81DA24A77037}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedBit.Ai.Functions", "RedBit.Ai.Functions\RedBit.Ai.Functions.csproj", "{D7A3E07C-B5E9-4D7B-B64F-998368CE18D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedBit.Ai.Functions", "RedBit.Ai.Functions\RedBit.Ai.Functions.csproj", "{D7A3E07C-B5E9-4D7B-B64F-998368CE18D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedBit.Ai.Models", "RedBit.Ai.Models\RedBit.Ai.Models.csproj", "{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -101,6 +103,18 @@ Global
 		{D7A3E07C-B5E9-4D7B-B64F-998368CE18D3}.Release|iPhone.Build.0 = Release|Any CPU
 		{D7A3E07C-B5E9-4D7B-B64F-998368CE18D3}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{D7A3E07C-B5E9-4D7B-B64F-998368CE18D3}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|iPhone.Build.0 = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{A4FFF4C7-7418-44FA-92B8-B2DC61285A83}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
