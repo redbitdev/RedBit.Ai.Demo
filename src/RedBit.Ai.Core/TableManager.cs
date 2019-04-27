@@ -1,4 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos.Table;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RedBit.Ai.Models;
 using System;
 using System.Threading.Tasks;
@@ -80,6 +82,54 @@ namespace RedBit.Ai.Core
                     await CloudTable.ExecuteAsync(TableOperation.Merge(entity));
                 }
             }
+        }
+
+        public async Task<ImageUploadResult> GetStatus(string id)
+        {
+            // initialize
+            await Initialzie();
+
+            var result = await CloudTable.ExecuteAsync(TableOperation.Retrieve<ImageEntity>(ImageEntity.PARTITION_KEY, id));
+            if (result.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
+            {
+                var entity = result.Result as ImageEntity;
+                if (entity == null)
+                    return null;
+
+                if (string.IsNullOrEmpty(entity.MediumImageUrl) || string.IsNullOrEmpty(entity.ExtraSmallImageUrl) || string.IsNullOrEmpty(entity.SmallImageUrl) || string.IsNullOrEmpty(entity.ImageAnalyzerResults))
+                {
+                    return new ImageUploadResult
+                    {
+                        Id = entity.RowKey,
+                        Url = entity.OriginalImageUrl,
+                    };
+                }
+                else
+                {
+                    return new ImageUploadResult
+                    {
+                        Id = entity.RowKey,
+                        Url = entity.OriginalImageUrl,
+                        Images = new Images
+                        {
+                            MediumImageUrl = entity.MediumImageUrl,
+                            ExtraSmallImageUrl = entity.ExtraSmallImageUrl,
+                            SmallImageUrl = entity.SmallImageUrl,
+                            OriginalImageUrl = entity.OriginalImageUrl
+                        },
+                        Description = GetDescription(entity)
+                    };
+                }
+            }
+            else
+                return null;
+        }
+
+    private string GetDescription(ImageEntity entity)
+        {
+            var data = JObject.Parse(entity.ImageAnalyzerResults);
+            var desc = data["description"]?["captions"]?[0]?["text"];
+            return desc.Value<string>();
         }
     }
 }

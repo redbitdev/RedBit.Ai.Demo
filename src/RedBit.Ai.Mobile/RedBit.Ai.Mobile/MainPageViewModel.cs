@@ -49,6 +49,18 @@ namespace RedBit.XamServerless
             set => SetProperty(ref _PhotoPath, value);
         }
 
+        private string _Description = "";
+
+        /// <summary>
+        /// Sets and gets the Description property.
+        /// Changes to that property's value raise the PropertyChanged event. 
+        /// </summary>
+        public string Description
+        {
+            get => _Description;
+            set => SetProperty(ref _Description, value);
+        }
+
         private Command _SnapPictureCommand;
         /// <summary>
         /// Gets the SnapPicture.
@@ -104,7 +116,10 @@ namespace RedBit.XamServerless
                             // upload the image
                             Status = "Uploading Image!";
                             await UploadImage(file.GetStream());
-                            Status = $"Image Uploaded! (ID: {_result?.Id})";
+                            Status = "Waiting for analysis";
+                            _result = await WaitTillProcessingComplete(_result?.Id);
+                            Status = $"Analysis complete!";
+                            Description = _result.Description;
                         }
                     }
                     else
@@ -152,6 +167,32 @@ namespace RedBit.XamServerless
 
                         // parse out the response
                         _result = JsonConvert.DeserializeObject<ImageUploadResult>(responseContent);
+                    }
+                }
+            }
+        }
+
+        private async Task<ImageUploadResult> WaitTillProcessingComplete(string id)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                // get the URL
+                var url = $"{BASE_URL}/ImageProcessingStatusFunc?id={id}";
+
+                // create the request
+                using (var msg = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    // send the response
+                    using (var response = await client.SendAsync(msg, HttpCompletionOption.ResponseContentRead))
+                    {
+                        var responseContent = await response.Content.ReadAsStringAsync();
+
+                        // parse out the response
+                        var uploadResponse = JsonConvert.DeserializeObject<ImageUploadResult>(responseContent);
+                        if (uploadResponse.Images == null)
+                            return await WaitTillProcessingComplete(id);
+                        else
+                            return uploadResponse;
                     }
                 }
             }

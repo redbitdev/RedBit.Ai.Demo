@@ -14,6 +14,7 @@
     </ContentPage.ToolbarItems>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -39,6 +40,13 @@
             IsVisible="{Binding IsBusy}"
             VerticalOptions="CenterAndExpand"
             HorizontalOptions="CenterAndExpand" />
+
+        <!--Just a label to show the status-->
+        <Label Grid.Row="2" Text="{Binding Description}" 
+               HorizontalOptions="FillAndExpand"
+               HorizontalTextAlignment="Center"
+               VerticalTextAlignment="Center"
+               FontSize="Medium"/>
     </Grid>
 
 </ContentPage>
