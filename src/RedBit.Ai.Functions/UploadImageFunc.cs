@@ -65,19 +65,29 @@ namespace RedBit.Ai.Functions
             else
             {
                 log.LogInformation($"Received image of size {buffer.Length} bytes");
+                
                 // add the image to blob storage and get the url
                 string url = await BlobManager.AddOriginalImage(buffer);
+                
                 // add the image to table and get the id
-                string id = await TableManager.AddOriginalImage(url);
+                var imageEntity = await TableManager.AddOriginalImage(url);
+
+                // send the image entity to event grid
+                await EventGridManager.SendNewImageEvent(imageEntity);
+
                 // return the details to the user
-                return new OkObjectResult(new ImageUploadResult { Id = id, Url = url });
+                return new OkObjectResult(new ImageUploadResult { Id = imageEntity.RowKey, Url = url });
             }
         }
 
         private static string AzureConnectionString => _config?["AzureWebJobsStorage"];
+        private static string EventGridKey => _config?["EventGridKey"];
+        private static string EventGridTopicEndpoint => _config?["EventGridTopicEndpoint"];
         private static BlobManager _blobManager;
         private static BlobManager BlobManager => _blobManager ?? (_blobManager = new BlobManager(AzureConnectionString));
         private static TableManager _tableManager;
         private static TableManager TableManager => _tableManager ?? (_tableManager = new TableManager(AzureConnectionString));
+        private static EventGridManager eventGridManager;
+        private static EventGridManager EventGridManager => eventGridManager ?? (eventGridManager = new EventGridManager(EventGridTopicEndpoint, EventGridKey));
     }
 }

@@ -42,6 +42,14 @@ namespace RedBit.Ai.Core
 
                 // Create the container if it doesn't already exist.
                 await BlobContainer.CreateIfNotExistsAsync();
+
+                // make access level to blob so urls are public
+                var perm = await BlobContainer.GetPermissionsAsync();
+                if (perm.PublicAccess != BlobContainerPublicAccessType.Blob)
+                {
+                    perm.PublicAccess = BlobContainerPublicAccessType.Blob;
+                    await BlobContainer.SetPermissionsAsync(perm);
+                }
             }
         }
 
@@ -62,6 +70,108 @@ namespace RedBit.Ai.Core
 
             // return the filename
             return $"{BlobContainer.StorageUri.PrimaryUri}/{blobName}";
+        }
+
+        /// <summary>
+        /// Adds an extra small image to the container
+        /// </summary>
+        /// <param name="stream">the stream to add</param>
+        /// <param name="url">the url of the original image</param>
+        /// <returns>the url</returns>
+        public Task<string> AddExtraSmallImage(Stream stream, string url)
+        {
+            return AddImageToContainer(stream, url, "extrasmallimagecontainer");
+        }
+
+        /// <summary>
+        /// Adds an small image to the container
+        /// </summary>
+        /// <param name="stream">the stream to add</param>
+        /// <param name="url">the url of the original image</param>
+        /// <returns>the url</returns>
+        public Task<string> AddSmallImage(Stream stream, string url)
+        {
+            return AddImageToContainer(stream, url, "smallimagecontainer");
+        }
+
+        /// <summary>
+        /// Adds an medium image to the container
+        /// </summary>
+        /// <param name="stream">the stream to add</param>
+        /// <param name="url">the url of the original image</param>
+        /// <returns>the url</returns>
+        public Task<string> AddMediumImage(Stream stream, string url)
+        {
+            return AddImageToContainer(stream, url, "mediumimagecontainer");
+        }
+
+        /// <summary>
+        /// Gets the blob from the url as a stream
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public async Task<Stream> GetBlobAsStream(string url)
+        {
+            // initialize
+            await Initialzie();
+
+            try
+            {
+                // get the original file name
+                var blobName = ExtractBlobNameFromUrl(url);
+
+                // download the stream and save into meory stream
+                var blob = BlobContainer.GetBlockBlobReference(blobName);
+                var ms = new System.IO.MemoryStream();
+                await blob.DownloadToStreamAsync(ms);
+
+                // reset it to 0
+                ms.Seek(0, SeekOrigin.Begin);
+
+                // return it
+                return ms;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private async Task<string> AddImageToContainer(Stream stream, string url, string containerName)
+        {
+            // reset it to 0
+            stream.Seek(0, SeekOrigin.Begin);
+
+            // initialize
+            await Initialzie();
+
+            // compose the name 
+            var blobName = ExtractBlobNameFromUrl(url);
+
+            // get the container
+            var container = BlobClient.GetContainerReference(containerName);
+            await container.CreateIfNotExistsAsync();
+            // make access level to blob so urls are public
+            var perm = await container.GetPermissionsAsync();
+            if (perm.PublicAccess != BlobContainerPublicAccessType.Blob)
+            {
+                perm.PublicAccess = BlobContainerPublicAccessType.Blob;
+                await container.SetPermissionsAsync(perm);
+            }
+
+            // upload the blob
+            var blob = container.GetBlockBlobReference(blobName);
+            await blob.UploadFromStreamAsync(stream);
+
+            // return the filename
+            return $"{container.StorageUri.PrimaryUri}/{blobName}";
+        }
+
+        private string ExtractBlobNameFromUrl(string url)
+        {
+            var uri = new Uri(url);
+            var blobName = uri.Segments[uri.Segments.Length - 1];
+            return blobName;
         }
     }
 }

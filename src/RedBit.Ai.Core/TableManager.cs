@@ -41,7 +41,7 @@ namespace RedBit.Ai.Core
         public CloudTableClient TableClient { get; set; }
         public CloudTable CloudTable { get; private set; }
 
-        public async Task<string> AddOriginalImage(string url)
+        public async Task<ImageEntity> AddOriginalImage(string url)
         {
             // initialize
             await Initialzie();
@@ -53,7 +53,16 @@ namespace RedBit.Ai.Core
             await CloudTable.ExecuteAsync(TableOperation.Insert(record));
 
             // return the row key
-            return record.RowKey;
+            return record;
         }
+
+        public async Task UpdateRecord(ImageEntity imageEntity)
+        {
+            // initialize
+            await Initialzie();
+            // TODO should check the response and handle appropriately
+            await CloudTable.ExecuteAsync(TableOperation.Merge(imageEntity));
+        }
+
     }
 }
