@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -10,81 +12,68 @@ using System.Web;
 
 namespace RedBit.Ai.Core
 {
-    public class ImageResizer
+    public class ImageResizer : CognativeService<Stream>
     {
         private readonly string BASE_URL = "https://canadacentral.api.cognitive.microsoft.com/vision/v2.0/generateThumbnail?";
-        private readonly ImageEntity _imageEntity;
+
         public ImageResizer(ImageEntity imageEntity, BlobManager blobManager, TableManager tableManager, string subscriptionKey)
+            : base(imageEntity, blobManager, tableManager, subscriptionKey) { }
+
+        internal override string Url => BASE_URL;
+        internal override HttpContent Content
         {
-            _imageEntity = imageEntity;
-            BlobManager = blobManager;
-            TableManager = tableManager;
-            SubscriptionKey = subscriptionKey;
+            get
+            {
+                var ret = new StringContent(JsonConvert.SerializeObject(new { url = _imageEntity.OriginalImageUrl }), Encoding.UTF8, "application/json");
+                ret.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                return ret;
+            }
         }
-        public BlobManager BlobManager { get; }
-        public TableManager TableManager { get; }
-        public string SubscriptionKey { get; }
+
+        internal async override Task<Stream> OnRequestComplete(HttpResponseMessage response)
+        {
+            var resp = await response.Content.ReadAsStreamAsync();
+            var streamCopy = new MemoryStream((int)resp.Length);
+            resp.CopyTo(streamCopy);
+            return streamCopy;
+        }
 
         public async Task Resize(ImageSize imageSize)
         {
-            // upload using HttpClient
-            using (HttpClient client = new HttpClient())
+            // create the query string
+            var queryString = HttpUtility.ParseQueryString(string.Empty);
+            var (width, height) = imageDimensionsTable[imageSize];
+            queryString["width"] = $"{width}";
+            queryString["height"] = $"{height}";
+            queryString["smartCropping"] = "true";
+
+            // make the request and get the resposne content
+            var responseContent = await MakeRequest(queryString);
+
+            // take the stream and add it to blob
+            var blobUrl = "";
+            switch (imageSize)
             {
-                // create the query string and params
-                var queryString = HttpUtility.ParseQueryString(string.Empty);
-                var (width, height) = imageDimensionsTable[imageSize];
-                queryString["width"] = $"{width}";
-                queryString["height"] = $"{height}";
-                queryString["smartCropping"] = "true";
+                case ImageSize.ExtraSmall:
+                    blobUrl = await BlobManager.AddExtraSmallImage(responseContent, _imageEntity.OriginalImageUrl);
+                    _imageEntity.ExtraSmallImageUrl = blobUrl;
+                    break;
+                case ImageSize.Small:
+                    blobUrl = await BlobManager.AddSmallImage(responseContent, _imageEntity.OriginalImageUrl);
+                    _imageEntity.SmallImageUrl = blobUrl;
+                    break;
+                case ImageSize.Medium:
+                    blobUrl = await BlobManager.AddMediumImage(responseContent, _imageEntity.OriginalImageUrl);
+                    _imageEntity.MediumImageUrl = blobUrl;
+                    break;
+                default:
+                    break;
+            }
 
-                // create the url
-                var url = $"{BASE_URL}{queryString.ToString()}";
-
-                // Add the subscription key
-                client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", SubscriptionKey);
-
-                // create the request
-                using (var msg = new HttpRequestMessage(HttpMethod.Post, url))
-                {
-                    msg.Headers.Add("Accept", "application/json");
-
-                    // set the body for the POST
-                    msg.Content = new StringContent(JsonConvert.SerializeObject(new { url = _imageEntity.OriginalImageUrl }), Encoding.UTF8, "application/json");
-                    msg.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-                    // send the response
-                    using (var response = await client.SendAsync(msg, HttpCompletionOption.ResponseContentRead))
-                    {
-                        var responseContent = await response.Content.ReadAsStreamAsync();
-
-                        // take the stream and add it to blob
-                        var blobUrl = "";
-                        switch (imageSize)
-                        {
-                            case ImageSize.ExtraSmall:
-                                blobUrl = await BlobManager.AddExtraSmallImage(responseContent, _imageEntity.OriginalImageUrl);
-                                _imageEntity.ExtraSmallImageUrl = blobUrl;
-                                break;
-                            case ImageSize.Small:
-                                blobUrl = await BlobManager.AddSmallImage(responseContent, _imageEntity.OriginalImageUrl);
-                                _imageEntity.SmallImageUrl = blobUrl;
-                                break;
-                            case ImageSize.Medium:
-                                blobUrl = await BlobManager.AddMediumImage(responseContent, _imageEntity.OriginalImageUrl);
-                                _imageEntity.MediumImageUrl = blobUrl;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        // if we have a url then lets add to table
-                        if (!string.IsNullOrEmpty(blobUrl))
-                        {
-                            await TableManager.UpdateRecord(_imageEntity);
-                        }
-
-                    }
-                }
+            // if we have a url then lets add to table
+            if (!string.IsNullOrEmpty(blobUrl))
+            {
+                await TableManager.UpdateRecord(_imageEntity);
             }
         }
 
@@ -99,6 +88,5 @@ namespace RedBit.Ai.Core
             { ImageSize.Small,      (640, 400) },
             { ImageSize.Medium,     (800, 600) }
         };
-
     }
 }
