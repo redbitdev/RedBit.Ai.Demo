@@ -35,7 +35,14 @@ namespace RedBit.Ai.Functions
                 if (!string.IsNullOrEmpty(payload.OriginalImageUrl))
                 {
                     // start task to analyze the image
-                    var ir = new ImageAnalyzer(payload, BlobManager, TableManager, CognitiveServicesKey);
+                    var ir = new ImageAnalyzer(payload, BlobManager, TableManager, CognitiveServicesKey)
+                    {
+                        DetectBrands = true,
+                        DetectFaces = true,
+                        IncludeDescription = true,
+                        DetectObjects = true,
+                        IncludeTags = true
+                    };
                     var ie = await ir.Analyze();
                     await TableManager.UpdateRecord(ie.RowKey, (entity) => entity.ImageAnalyzerResults = ie.ImageAnalyzerResults);
                 }
