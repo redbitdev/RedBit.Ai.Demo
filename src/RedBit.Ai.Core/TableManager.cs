@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos.Table;
 using RedBit.Ai.Models;
+using System;
 using System.Threading.Tasks;
 
 // TODO : this is hardcoded to work for demo, might want to refactor if you want to make generic or something else
@@ -64,5 +65,21 @@ namespace RedBit.Ai.Core
             await CloudTable.ExecuteAsync(TableOperation.Merge(imageEntity));
         }
 
+        public async Task UpdateRecord(string id, Action<ImageEntity> mergeRecordCallback)
+        {
+            await Initialzie();
+
+            var result = await CloudTable.ExecuteAsync(TableOperation.Retrieve<ImageEntity>(ImageEntity.PARTITION_KEY, id));
+            if (result.HttpStatusCode == (int)System.Net.HttpStatusCode.OK)
+            {
+                ImageEntity entity = result.Result as ImageEntity;
+                if (entity != null)
+                {
+                    mergeRecordCallback(entity);
+                    // TODO should check the response and handle appropriately
+                    await CloudTable.ExecuteAsync(TableOperation.Merge(entity));
+                }
+            }
+        }
     }
 }

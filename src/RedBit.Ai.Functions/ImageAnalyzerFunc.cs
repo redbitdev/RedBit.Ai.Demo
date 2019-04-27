@@ -1,26 +1,22 @@
 // Default URL for triggering event grid function in the local environment.
 // http://localhost:7071/runtime/webhooks/EventGrid?functionName={functionname}
-// https://cba2fa38.ngrok.io/runtime/webhooks/EventGrid?functionName=ResizeImageFunc
+// https://cba2fa38.ngrok.io/runtime/webhooks/EventGrid?functionName=ImageAnalyzerFunc
 
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using RedBit.Ai.Core;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
+using RedBit.Ai.Core;
+using Newtonsoft.Json;
 using System;
 
 namespace RedBit.Ai.Functions
 {
-    public static class ResizeImageFunc
+    public static class ImageRecoFunc
     {
-        
-
-        [FunctionName("ResizeImageFunc")]
+        [FunctionName("ImageAnalyzerFunc")]
         public static async void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log, ExecutionContext context)
         {
             // get the config
@@ -36,28 +32,19 @@ namespace RedBit.Ai.Functions
             {
                 // deserialize the payload
                 var payload = JsonConvert.DeserializeObject<ImageEntity>(data);
-
                 if (!string.IsNullOrEmpty(payload.OriginalImageUrl))
                 {
-                    // start tasks to resize the image to different sizes
-                    var ir = new ImageResizer(payload, BlobManager, TableManager, CognitiveServicesKey);
-                    await ir.Resize(ImageResizer.ImageSize.ExtraSmall);
-                    await ir.Resize(ImageResizer.ImageSize.Medium);
-                    var ie = await ir.Resize(ImageResizer.ImageSize.Small);
-
-                    await TableManager.UpdateRecord(ie.RowKey, (entity) =>
-                    {
-                        entity.ExtraSmallImageUrl = ie.ExtraSmallImageUrl;
-                        entity.MediumImageUrl = ie.MediumImageUrl;
-                        entity.SmallImageUrl = ie.SmallImageUrl;
-                    });
+                    // start task to analyze the image
+                    var ir = new ImageAnalyzer(payload, BlobManager, TableManager, CognitiveServicesKey);
+                    var ie = await ir.Analyze();
+                    await TableManager.UpdateRecord(ie.RowKey, (entity) => entity.ImageAnalyzerResults = ie.ImageAnalyzerResults);
                 }
                 else
                 {
                     log.LogInformation($"Original Image not available in payload: {data}");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // cannot deserilaize so just ignore
                 log.LogInformation($"Could not process image : {ex.Message}");

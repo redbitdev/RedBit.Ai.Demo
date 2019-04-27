@@ -38,7 +38,7 @@ namespace RedBit.Ai.Core
             return streamCopy;
         }
 
-        public async Task Resize(ImageSize imageSize)
+        public async Task<ImageEntity> Resize(ImageSize imageSize)
         {
             // create the query string
             var queryString = HttpUtility.ParseQueryString(string.Empty);
@@ -70,11 +70,7 @@ namespace RedBit.Ai.Core
                     break;
             }
 
-            // if we have a url then lets add to table
-            if (!string.IsNullOrEmpty(blobUrl))
-            {
-                await TableManager.UpdateRecord(_imageEntity);
-            }
+            return _imageEntity;
         }
 
         public enum ImageSize
