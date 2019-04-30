@@ -1,8 +1,10 @@
 # Overview
 
-This repository is a companion to the presentation and slides here https://www.slideshare.net/MarkArteaga/serverless-computing-with-azure-functions-and-xamarin
+This repository is a companion to the presentation and slides here https://www.slideshare.net/MarkArteaga/azure-functions-ai-xamarin-how-to-use-the-cloud-to-your-advantage
 
 All commits start from building the application but if you run the latest commit you can run end to end demo.
+
+Don't forget to change your keys as they do not work anymore.
 
 ## Get It Working
 
@@ -18,14 +20,9 @@ You require the following
 
 To get the code running
 
-1. Under src open up RedBit.XamServerless.sln
-2. Replace keys for table storage
-   1. In BlogManager.cs line 23 the `_connectionString` variable
-   2. In TableManager.cs Line 20 the `_connectionString` variable
-3. Change the ngrok url for uploading and status endpoints
-4. Line 115 of MainPageViewModel.cs change the `BASE_URL`
-
-
+1. Under src open up RedBit.Ai.Demo.sln
+2. Change the ngrok url for uploading and status endpoints
+4. MainPageViewModel.cs change the `BASE_URL`
 
 ## Disclaimer
 
